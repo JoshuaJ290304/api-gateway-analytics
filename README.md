@@ -121,35 +121,36 @@ A full-stack Flask application for managing API access, monitoring usage, and an
 
 ### Login Page
 
-![Login Page](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/login.png)
+![Login Page](static/screenshots/login.png)
 
 ### Registration Page
 
-![Registration Page](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/register.png)
+![Registration Page](static/screenshots/register.png)
 
 ### User Dashboard
 
-![User Dashboard](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/dash.png)
+![User Dashboard](static/screenshots/dash.png)
 
 ### Request History
 
-![Request History](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/requests.png)
+![Request History](static/screenshots/requests.png)
 
 ### Analytics Dashboard
 
-![Analytics Dashboard](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/analytics.png)
+![Analytics Dashboard](static/screenshots/analytics.png)
 
 ### Admin Dashboard Overview
 
-![Admin Dashboard](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/admin_dash1.png)
+![Admin Dashboard](static/screenshots/admin_dash1.png)
 
 ### Admin Statistics
 
-![Admin Statistics](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/admin_dash2.png)
+![Admin Statistics](static/screenshots/admin_dash2.png)
 
 ### API Documentation
 
-![API Documentation](https://raw.githubusercontent.com/JoshuaJ290304/api-gateway-analytics/main/static/screenshots/doc.png)
+![API Documentation](static/screenshots/doc.png)
+
 
 ---
 
