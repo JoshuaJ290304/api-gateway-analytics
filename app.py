@@ -1,6 +1,11 @@
+import requests
+from flask import Response
+import csv
+import io
 import secrets
 from datetime import datetime
 import time
+from datetime import datetime, timedelta
 from flask import *
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -10,6 +15,51 @@ from flask import Flask
 app = Flask(__name__)
 
 app.secret_key = "api_gateway_secret"
+
+
+def check_rate_limit(api_key):
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    one_minute_ago = datetime.now() - timedelta(minutes=1)
+
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM rate_limits
+        WHERE api_key=%s
+        AND request_time >= %s
+    """,
+    (
+        api_key,
+        one_minute_ago
+    ))
+
+    count = cur.fetchone()[0]
+
+    if count >= 5:
+
+        cur.close()
+        conn.close()
+
+        return False
+
+    cur.execute("""
+        INSERT INTO rate_limits
+        (
+            api_key
+        )
+        VALUES
+        (%s)
+    """,
+    (api_key,))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return True
 
 
 @app.route("/")
@@ -197,6 +247,15 @@ def weather_api():
             }
         ), 401
 
+    # Rate Limiting
+    if not check_rate_limit(api_key):
+
+        return jsonify(
+            {
+                "error": "Rate limit exceeded. Try again in a minute."
+            }
+        ), 429
+
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -223,10 +282,34 @@ def weather_api():
 
     start_time = time.time()
 
+    city = request.args.get(
+        "city",
+        "Trivandrum"
+    )
+
+    API_KEY = "c0f6c9f34d37198f016533ba2697dbb7"
+
+    url = (
+        f"https://api.openweathermap.org/data/2.5/weather"
+        f"?q={city}"
+        f"&appid={API_KEY}"
+        f"&units=metric"
+    )
+
+    r = requests.get(url)
+    data = r.json()
+    print(data)
+
+    if "name" not in data:
+        return jsonify({
+            "error": data.get("message", "Weather API Error"),
+            "full_response": data
+        }), 500
+
     response = {
-        "city": "Trivandrum",
-        "temperature": "31°C",
-        "condition": "Sunny"
+        "city": data["name"],
+        "temperature": f"{data['main']['temp']}°C",
+        "condition": data["weather"][0]["main"]
     }
 
     response_time = round(
@@ -260,38 +343,209 @@ def weather_api():
     return jsonify(response)
 
 
-@app.route("/requests")
-def requests_page():
+@app.route("/api/news")
+def news_api():
 
-    if "user_id" not in session:
-        return redirect("/login")
+    api_key = request.headers.get("X-API-KEY")
+
+    if not api_key:
+        return jsonify(
+            {
+                "error": "API Key Missing"
+            }
+        ), 401
+    
+    if not check_rate_limit(api_key):
+
+        return jsonify(
+            {
+                "error": "Rate limit exceeded. Try again in a minute."
+            }
+        ), 429
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
         SELECT
+            user_id
+        FROM api_keys
+        WHERE api_key=%s
+    """,
+    (api_key,))
+
+    user = cur.fetchone()
+
+    if not user:
+
+        cur.close()
+        conn.close()
+
+        return jsonify(
+            {
+                "error": "Invalid API Key"
+            }
+        ), 401
+
+    start_time = time.time()
+
+    response = {
+        "headlines": [
+            "AI transforms software development",
+            "Cloud computing continues to grow",
+            "Cybersecurity remains a top concern"
+        ]
+    }
+
+    response_time = round(
+        (time.time() - start_time) * 1000,
+        2
+    )
+
+    cur.execute("""
+        INSERT INTO api_logs
+        (
+            user_id,
             endpoint,
+            response_time_ms,
+            status_code
+        )
+        VALUES
+        (%s,%s,%s,%s)
+    """,
+    (
+        user[0],
+        "/api/news",
+        response_time,
+        200
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(response)
+
+
+@app.route("/api/stocks")
+def stocks_api():
+
+    api_key = request.headers.get("X-API-KEY")
+
+    if not api_key:
+        return jsonify(
+            {
+                "error": "API Key Missing"
+            }
+        ), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            user_id
+        FROM api_keys
+        WHERE api_key=%s
+    """,
+    (api_key,))
+
+    user = cur.fetchone()
+
+    if not user:
+
+        cur.close()
+        conn.close()
+
+        return jsonify(
+            {
+                "error": "Invalid API Key"
+            }
+        ), 401
+    
+    if not check_rate_limit(api_key):
+
+        return jsonify(
+            {
+                "error": "Rate limit exceeded. Try again in a minute."
+            }
+        ), 429
+
+    start_time = time.time()
+
+    response = {
+        "symbol": "AAPL",
+        "price": 212.45,
+        "change": "+1.24%"
+    }
+
+    response_time = round(
+        (time.time() - start_time) * 1000,
+        2
+    )
+
+    cur.execute("""
+        INSERT INTO api_logs
+        (
+            user_id,
+            endpoint,
+            response_time_ms,
+            status_code
+        )
+        VALUES
+        (%s,%s,%s,%s)
+    """,
+    (
+        user[0],
+        "/api/stocks",
+        response_time,
+        200
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return jsonify(response)
+
+
+@app.route("/requests")
+def request_history():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    search = request.args.get("search", "")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT endpoint,
             request_time,
             response_time_ms,
             status_code
         FROM api_logs
         WHERE user_id=%s
+        AND endpoint ILIKE %s
         ORDER BY request_time DESC
     """,
-    (session["user_id"],))
+    (
+        session["user_id"],
+        f"%{search}%"
+    ))
 
     logs = cur.fetchall()
-
-    print("Current User ID:", session["user_id"])
-    print("Logs:", logs)
 
     cur.close()
     conn.close()
 
     return render_template(
         "requests.html",
-        logs=logs
+        logs=logs,
+        search=search
     )
 
 
@@ -419,6 +673,40 @@ def admin():
     )
 
 
+@app.route("/admin/users")
+def admin_users():
+
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "admin":
+        return "Access Denied", 403
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            id,
+            name,
+            email,
+            role
+        FROM users
+        ORDER BY id
+    """)
+
+    users = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "admin_users.html",
+        users=users
+    )
+
+
 @app.route("/regenerate_key", methods=["POST"])
 def regenerate_key():
 
@@ -453,6 +741,195 @@ def regenerate_key():
 @app.route("/docs")
 def docs():
     return render_template("docs.html")
+
+
+@app.route("/export_logs")
+def export_logs():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT endpoint,
+            request_time,
+            response_time_ms,
+            status_code
+        FROM api_logs
+        WHERE user_id=%s
+        ORDER BY request_time DESC
+    """,
+    (session["user_id"],))
+
+    logs = cur.fetchall()
+
+    output = io.StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Endpoint",
+        "Request Time",
+        "Response Time (ms)",
+        "Status Code"
+    ])
+
+    for row in logs:
+        writer.writerow(row)
+
+    cur.close()
+    conn.close()
+
+    output.seek(0)
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=api_logs.csv"
+        }
+    )
+
+
+@app.route("/profile")
+def profile():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # User Details
+    cur.execute("""
+        SELECT
+            name,
+            email,
+            role
+        FROM users
+        WHERE id=%s
+    """,
+    (session["user_id"],))
+
+    user = cur.fetchone()
+
+    # API Key
+    cur.execute("""
+        SELECT api_key
+        FROM api_keys
+        WHERE user_id=%s
+    """,
+    (session["user_id"],))
+
+    key = cur.fetchone()
+
+    # Total Requests
+    cur.execute("""
+        SELECT COUNT(*)
+        FROM api_logs
+        WHERE user_id=%s
+    """,
+    (session["user_id"],))
+
+    total_requests = cur.fetchone()[0]
+
+    # Most Used Endpoint
+    cur.execute("""
+        SELECT endpoint,
+               COUNT(*) as total
+        FROM api_logs
+        WHERE user_id=%s
+        GROUP BY endpoint
+        ORDER BY total DESC
+        LIMIT 1
+    """,
+    (session["user_id"],))
+
+    most_used = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "profile.html",
+        user=user,
+        api_key=key[0] if key else "No API Key",
+        total_requests=total_requests,
+        most_used=most_used
+    )
+
+
+@app.route("/make_admin/<int:user_id>")
+def make_admin(user_id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "admin":
+        return "Access Denied", 403
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE users
+        SET role='admin'
+        WHERE id=%s
+    """,
+    (user_id,))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    flash("User promoted to admin successfully.")
+
+    return redirect("/admin/users")
+
+
+@app.route("/delete_user/<int:user_id>")
+def delete_user(user_id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "admin":
+        return "Access Denied", 403
+
+    if user_id == session["user_id"]:
+        flash("You cannot delete your own account.")
+        return redirect("/admin/users")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM api_logs WHERE user_id=%s",
+        (user_id,)
+    )
+
+    cur.execute(
+        "DELETE FROM api_keys WHERE user_id=%s",
+        (user_id,)
+    )
+
+    cur.execute(
+        "DELETE FROM users WHERE id=%s",
+        (user_id,)
+    )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    flash("User deleted successfully.")
+
+    return redirect("/admin/users")
 
 
 @app.route("/logout")

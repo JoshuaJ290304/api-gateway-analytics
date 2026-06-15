@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">
+    User Management
+</h2>
+
+<div class="card shadow">
+
+<div class="card-body">
+
+    <table class="table table-bordered table-striped">
+
+        <thead class="table-dark">
+
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for user in users %}
+
+            <tr>
+
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] }}</td>
+                <td>{{ user[2] }}</td>
+                <td>{{ user[3] }}</td>
+
+                <td>
+
+                    {% if user[3] != 'admin' %}
+
+                    <a href="/make_admin/{{ user[0] }}"
+                       class="btn btn-warning btn-sm">
+                        Make Admin
+                    </a>
+
+                    {% endif %}
+
+                    <a href="/delete_user/{{ user[0] }}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete this user?')">
+                        Delete
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+</div>
+
+{% endblock %}

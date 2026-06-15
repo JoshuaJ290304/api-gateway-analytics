@@ -21,7 +21,10 @@ A full-stack Flask application for managing API access, monitoring usage, and an
 
 ### API Gateway
 
-* Weather Endpoint
+* Live Weather API Integration (OpenWeatherMap)
+* Real-time weather data fetched from OpenWeatherMap API
+* Supports dynamic city lookup
+* API Gateway authentication and request logging
 * News Endpoint
 * Stocks Endpoint
 * API Key Validation
@@ -32,6 +35,13 @@ A full-stack Flask application for managing API access, monitoring usage, and an
 * Status Code Tracking
 * Timestamp Recording
 * User Activity History
+
+### Security Features
+
+- API Key Authentication
+- API Key Regeneration
+- Rate Limiting (5 Requests/Minute)
+- Request Monitoring
 
 ### Analytics Dashboard
 
@@ -179,7 +189,6 @@ docker compose up -d
 ## Future Enhancements
 
 * JWT Authentication
-* Rate Limiting
 * OpenAPI / Swagger Documentation
 * Email Verification
 * API Usage Quotas

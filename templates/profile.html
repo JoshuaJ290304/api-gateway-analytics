@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h3>User Profile</h3>
+        </div>
+
+        <div class="card-body">
+
+            <h5>User Information</h5>
+
+            <p>
+                <strong>Name:</strong>
+                {{ user[0] }}
+            </p>
+
+            <p>
+                <strong>Email:</strong>
+                {{ user[1] }}
+            </p>
+
+            <p>
+                <strong>Role:</strong>
+                {{ user[2] }}
+            </p>
+
+            <hr>
+
+            <h5>API Information</h5>
+
+            <p>
+                <strong>API Key:</strong>
+            </p>
+
+            <div class="alert alert-secondary">
+                {{ api_key }}
+            </div>
+
+            <a href="/regenerate_key"
+               class="btn btn-warning">
+                Regenerate API Key
+            </a>
+
+            <hr>
+
+            <h5>Usage Statistics</h5>
+
+            <p>
+                <strong>Total Requests:</strong>
+                {{ total_requests }}
+            </p>
+
+            <p>
+                <strong>Most Used Endpoint:</strong>
+
+                {% if most_used %}
+                    {{ most_used[0] }}
+                {% else %}
+                    No requests yet
+                {% endif %}
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
