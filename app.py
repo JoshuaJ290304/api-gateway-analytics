@@ -349,58 +349,56 @@ def news_api():
     api_key = request.headers.get("X-API-KEY")
 
     if not api_key:
-        return jsonify(
-            {
-                "error": "API Key Missing"
-            }
-        ), 401
-    
-    if not check_rate_limit(api_key):
-
-        return jsonify(
-            {
-                "error": "Rate limit exceeded. Try again in a minute."
-            }
-        ), 429
+        return jsonify({"error": "API Key Missing"}), 401
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT
-            user_id
+        SELECT user_id
         FROM api_keys
         WHERE api_key=%s
-    """,
-    (api_key,))
+    """, (api_key,))
 
     user = cur.fetchone()
 
     if not user:
-
         cur.close()
         conn.close()
+        return jsonify({"error": "Invalid API Key"}), 401
 
-        return jsonify(
-            {
-                "error": "Invalid API Key"
-            }
-        ), 401
+    topic = request.args.get(
+        "topic",
+        "technology"
+    )
+
+    NEWS_API_KEY = "44ba470ec3ce499cb0f7fd1c082859e7"
+
+    url = (
+        f"https://newsapi.org/v2/everything"
+        f"?q={topic}"
+        f"&sortBy=publishedAt"
+        f"&pageSize=5"
+        f"&apiKey={NEWS_API_KEY}"
+    )
 
     start_time = time.time()
 
-    response = {
-        "headlines": [
-            "AI transforms software development",
-            "Cloud computing continues to grow",
-            "Cybersecurity remains a top concern"
-        ]
-    }
+    r = requests.get(url)
+    data = r.json()
 
     response_time = round(
         (time.time() - start_time) * 1000,
         2
     )
+
+    articles = []
+
+    for article in data.get("articles", []):
+        articles.append({
+            "title": article["title"],
+            "source": article["source"]["name"]
+        })
 
     cur.execute("""
         INSERT INTO api_logs
@@ -410,8 +408,7 @@ def news_api():
             response_time_ms,
             status_code
         )
-        VALUES
-        (%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s)
     """,
     (
         user[0],
@@ -425,7 +422,10 @@ def news_api():
     cur.close()
     conn.close()
 
-    return jsonify(response)
+    return jsonify({
+        "topic": topic,
+        "articles": articles
+    })
 
 
 @app.route("/api/stocks")
@@ -434,56 +434,56 @@ def stocks_api():
     api_key = request.headers.get("X-API-KEY")
 
     if not api_key:
-        return jsonify(
-            {
-                "error": "API Key Missing"
-            }
-        ), 401
+        return jsonify({"error": "API Key Missing"}), 401
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT
-            user_id
+        SELECT user_id
         FROM api_keys
         WHERE api_key=%s
-    """,
-    (api_key,))
+    """, (api_key,))
 
     user = cur.fetchone()
 
     if not user:
-
         cur.close()
         conn.close()
+        return jsonify({"error": "Invalid API Key"}), 401
 
-        return jsonify(
-            {
-                "error": "Invalid API Key"
-            }
-        ), 401
-    
-    if not check_rate_limit(api_key):
+    symbol = request.args.get(
+        "symbol",
+        "AAPL"
+    )
 
-        return jsonify(
-            {
-                "error": "Rate limit exceeded. Try again in a minute."
-            }
-        ), 429
+    ALPHA_KEY = "J3CI96HGYAA8AJ3D"
+
+    url = (
+        f"https://www.alphavantage.co/query"
+        f"?function=GLOBAL_QUOTE"
+        f"&symbol={symbol}"
+        f"&apikey={ALPHA_KEY}"
+    )
 
     start_time = time.time()
 
-    response = {
-        "symbol": "AAPL",
-        "price": 212.45,
-        "change": "+1.24%"
-    }
+    r = requests.get(url)
+    data = r.json()
 
     response_time = round(
         (time.time() - start_time) * 1000,
         2
     )
+
+    quote = data.get("Global Quote", {})
+
+    response = {
+        "symbol": quote.get("01. symbol"),
+        "price": quote.get("05. price"),
+        "change": quote.get("09. change"),
+        "change_percent": quote.get("10. change percent")
+    }
 
     cur.execute("""
         INSERT INTO api_logs
@@ -493,8 +493,7 @@ def stocks_api():
             response_time_ms,
             status_code
         )
-        VALUES
-        (%s,%s,%s,%s)
+        VALUES (%s,%s,%s,%s)
     """,
     (
         user[0],
