@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Request History{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">
+    API Request History
+</h2>
+
+<div class="card shadow">
+
+    <div class="card-body">
+
+        <p>
+            Total Logs: {{ logs|length }}
+        </p>
+
+        {% if logs %}
+
+        <table class="table table-striped table-bordered">
+
+            <thead>
+
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Request Time</th>
+                    <th>Response Time (ms)</th>
+                    <th>Status Code</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for log in logs %}
+
+                <tr>
+
+                    <td>
+                        {{ log[0] }}
+                    </td>
+
+                    <td>
+                        {{ log[1] }}
+                    </td>
+
+                    <td>
+                        {{ log[2] }}
+                    </td>
+
+                    <td>
+
+                        {% if log[3] == 200 %}
+
+                            <span class="badge bg-success">
+                                {{ log[3] }}
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-danger">
+                                {{ log[3] }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+        <div class="alert alert-warning">
+
+            No API requests found.
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

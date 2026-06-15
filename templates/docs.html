@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">
+    API Documentation
+</h2>
+
+<div class="card shadow">
+
+    <div class="card-body">
+
+        <table class="table table-striped">
+
+            <thead>
+
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>/api/weather</td>
+                    <td>GET</td>
+                    <td>Returns weather information</td>
+                </tr>
+
+                <tr>
+                    <td>/api/news</td>
+                    <td>GET</td>
+                    <td>Returns latest news</td>
+                </tr>
+
+                <tr>
+                    <td>/api/stocks</td>
+                    <td>GET</td>
+                    <td>Returns stock market data</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        <hr>
+
+        <h5>Authentication</h5>
+
+        <p>
+            Pass your API key using the header:
+        </p>
+
+        <pre>X-API-KEY: your_api_key</pre>
+
+        <h5>Example Request</h5>
+
+        <pre>
+GET /api/weather
+X-API-KEY: your_api_key
+        </pre>
+
+        <h5>Example Response</h5>
+
+        <pre>
+{
+    "city":"Trivandrum",
+    "temperature":"31°C",
+    "condition":"Sunny"
+}
+        </pre>
+
+    </div>
+
+</div>
+
+{% endblock %}

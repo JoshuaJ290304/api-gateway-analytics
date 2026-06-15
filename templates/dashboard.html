@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>
+    Welcome, {{ user }}
+</h2>
+
+<div class="card shadow mt-4">
+
+    <div class="card-header">
+        <h5>Your API Key</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="mb-3">
+
+            <code>
+                {{ api_key }}
+            </code>
+
+        </div>
+
+        <form action="/regenerate_key"
+            method="POST">
+
+            <button
+                class="btn btn-warning">
+
+                Regenerate API Key
+
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+<div class="row mt-4">
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-primary">
+
+            <div class="card-body">
+
+                <h5>Total Requests</h5>
+
+                <h2>{{ total_requests }}</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-success">
+
+            <div class="card-body">
+
+                <h5>Avg Response</h5>
+
+                <h2>{{ avg_response }} ms</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card text-bg-danger">
+
+            <div class="card-body">
+
+                <h5>Errors</h5>
+
+                <h2>{{ errors }}</h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

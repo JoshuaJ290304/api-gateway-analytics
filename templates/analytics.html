@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">
+    Analytics Dashboard
+</h2>
+
+<div class="row">
+
+    <div class="col-md-6">
+
+        <div class="card shadow">
+
+            <div class="card-header">
+                Requests by Endpoint
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="endpointChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card shadow">
+
+            <div class="card-header">
+                Success vs Errors
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="statusChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const endpointCtx =
+document.getElementById('endpointChart');
+
+new Chart(endpointCtx, {
+
+    type: 'bar',
+
+    data: {
+
+        labels: {{ labels|tojson }},
+
+        datasets: [{
+
+            label: 'Requests',
+
+            data: {{ values|tojson }}
+
+        }]
+    }
+});
+
+const statusCtx =
+document.getElementById('statusChart');
+
+new Chart(statusCtx, {
+
+    type: 'pie',
+
+    data: {
+
+        labels: [
+            'Success',
+            'Errors'
+        ],
+
+        datasets: [{
+
+            data: [
+                {{ success_count }},
+                {{ error_count }}
+            ]
+
+        }]
+    }
+});
+
+</script>
+
+{% endblock %}

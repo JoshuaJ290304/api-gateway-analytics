@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="text-center mt-5">
+
+    <h1>☁️ API Gateway Analytics Platform</h1>
+
+    <p class="lead">
+        Monitor API traffic, response times, and usage analytics.
+    </p>
+
+    {% if not session.get("user_id") %}
+
+        <a href="/register" class="btn btn-success">
+            Get Started
+        </a>
+
+        <a href="/login" class="btn btn-primary">
+            Login
+        </a>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
