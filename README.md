@@ -29,6 +29,20 @@ A full-stack Flask application for managing API access, monitoring usage, and an
 * Stocks Endpoint
 * API Key Validation
 
+## Live APIs
+
+### Weather
+
+GET /api/weather?city=Mumbai
+
+### News
+
+GET /api/news?topic=technology
+
+### Stocks
+
+GET /api/stocks?symbol=AAPL
+
 ### Request Monitoring
 
 * Request Logging
@@ -126,6 +140,19 @@ A full-stack Flask application for managing API access, monitoring usage, and an
 | request_time  | TIMESTAMP |
 
 ---
+
+User
+  ↓
+Authentication
+  ↓
+API Gateway
+  ├── OpenWeatherMap
+  ├── NewsAPI
+  └── Alpha Vantage
+  ↓
+Analytics & Logging
+  ↓
+PostgreSQL
 
 ## Screenshots
 
