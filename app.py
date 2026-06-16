@@ -471,7 +471,8 @@ def stocks_api():
 
     r = requests.get(url)
     data = r.json()
-    print(data)
+
+    print("Alpha Vantage Response:", data)
 
     response_time = round(
         (time.time() - start_time) * 1000,
