@@ -479,7 +479,21 @@ def stocks_api():
         2
     )
 
-    quote = data.get("Global Quote", {})
+    if "Global Quote" not in data:
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "error": data.get(
+                "Note",
+                data.get(
+                    "Information",
+                    "Stock data temporarily unavailable"
+                )
+            )
+        }), 503
+
+    quote = data["Global Quote"]
 
     response = {
         "symbol": quote.get("01. symbol"),
