@@ -435,7 +435,9 @@ def stocks_api():
     api_key = request.headers.get("X-API-KEY")
 
     if not api_key:
-        return jsonify({"error": "API Key Missing"}), 401
+        return jsonify({
+            "error": "API Key Missing"
+        }), 401
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -444,19 +446,23 @@ def stocks_api():
         SELECT user_id
         FROM api_keys
         WHERE api_key=%s
-    """, (api_key,))
+    """,
+    (api_key,))
 
     user = cur.fetchone()
 
     if not user:
         cur.close()
         conn.close()
-        return jsonify({"error": "Invalid API Key"}), 401
+
+        return jsonify({
+            "error": "Invalid API Key"
+        }), 401
 
     symbol = request.args.get(
         "symbol",
         "AAPL"
-    )
+    ).upper()
 
     ALPHA_KEY = "J3CI96HGYAA8AJ3D"
 
@@ -469,37 +475,103 @@ def stocks_api():
 
     start_time = time.time()
 
-    r = requests.get(url)
-    data = r.json()
+    try:
+        r = requests.get(url, timeout=10)
+        data = r.json()
+    except Exception:
 
-    print("Alpha Vantage Response:", data)
+        response_time = round(
+            (time.time() - start_time) * 1000,
+            2
+        )
+
+        cur.execute("""
+            INSERT INTO api_logs
+            (
+                user_id,
+                endpoint,
+                response_time_ms,
+                status_code
+            )
+            VALUES (%s,%s,%s,%s)
+        """,
+        (
+            user[0],
+            "/api/stocks",
+            response_time,
+            500
+        ))
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "error": "Unable to fetch stock data."
+        }), 500
 
     response_time = round(
         (time.time() - start_time) * 1000,
         2
     )
 
+    # Alpha Vantage rate limit or API errors
     if "Global Quote" not in data:
+
+        error_message = data.get(
+            "Note",
+            data.get(
+                "Information",
+                "Stock data temporarily unavailable."
+            )
+        )
+
+        cur.execute("""
+            INSERT INTO api_logs
+            (
+                user_id,
+                endpoint,
+                response_time_ms,
+                status_code
+            )
+            VALUES (%s,%s,%s,%s)
+        """,
+        (
+            user[0],
+            "/api/stocks",
+            response_time,
+            503
+        ))
+
+        conn.commit()
+
         cur.close()
         conn.close()
 
         return jsonify({
-            "error": data.get(
-                "Note",
-                data.get(
-                    "Information",
-                    "Stock data temporarily unavailable"
-                )
-            )
+            "error": error_message
         }), 503
 
     quote = data["Global Quote"]
 
     response = {
-        "symbol": quote.get("01. symbol"),
-        "price": quote.get("05. price"),
-        "change": quote.get("09. change"),
-        "change_percent": quote.get("10. change percent")
+        "symbol": quote.get(
+            "01. symbol",
+            symbol
+        ),
+        "price": quote.get(
+            "05. price",
+            "N/A"
+        ),
+        "change": quote.get(
+            "09. change",
+            "N/A"
+        ),
+        "change_percent": quote.get(
+            "10. change percent",
+            "N/A"
+        )
     }
 
     cur.execute("""
